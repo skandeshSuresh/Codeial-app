@@ -1,38 +1,40 @@
-const Like = require('../models/like');
+const Like = require("../models/like");
+const Post =  require("../models/post");
 const Comment = require('../models/comment');
-const Post = require('../models/post');
 
 
 module.exports.toggleLike = async function(req, res){
     try{
 
-        //likes/toggle/?id=abcdef&type=Post
-        let Likeable;
+        // likes/toggle/?id=abcdef&type=Post
+        let likeable;
         let deleted = false;
 
-        if(req.query.type == 'Post'){
-            Likeable = await Post.findById(req.query.id).populate('likes');
+
+        if (req.query.type == 'Post'){
+            likeable = await Post.findById(req.query.id).populate('likes');
         }else{
-            Likeable = await Comment.findById(req.query.id).populate('likes');
+            likeable = await Comment.findById(req.query.id).populate('likes');
         }
 
-        //ccheck if like already exists
+
+        // check if a like already exists
         let existingLike = await Like.findOne({
             likeable: req.query.id,
             onModel: req.query.type,
             user: req.user._id
-        });
+        })
 
-        //if like already exists then delete it
-        if(existingLike){
-            Likeable.likes.pull(existingLike._id);
-            Likeable.save();
+        // if a like already exists then delete it
+        if (existingLike){
+            likeable.likes.pull(existingLike._id);
+            likeable.save();
 
             existingLike.remove();
-            deleted = true
+            deleted = true;
 
         }else{
-            //make a new like
+            // else make a new like
 
             let newLike = await Like.create({
                 user: req.user._id,
@@ -40,21 +42,24 @@ module.exports.toggleLike = async function(req, res){
                 onModel: req.query.type
             });
 
-            Likeable.likes.push(newLike._id);
-            Likeable.save();
+            likeable.likes.push(newLike._id);
+            likeable.save();
+
         }
 
-        return res.json(200,{
-            message: "Request Successful!",
+        return res.json(200, {
+            message: "Request successful!",
             data: {
                 deleted: deleted
             }
-        });
+        })
+
+
 
     }catch(err){
         console.log(err);
         return res.json(500, {
-            message: 'Internal server error'
-        })
+            message: 'Internal Server Error'
+        });
     }
 }
